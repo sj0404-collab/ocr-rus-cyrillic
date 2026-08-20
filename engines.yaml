@@ -1,0 +1,66 @@
+project: ocr-rus-cyrillic
+language: ru
+scripts:
+  - Cyrillic
+
+engines:
+  - id: tesseract
+    name: Tesseract OCR
+    kind: ocr-engine
+    language_codes:
+      - rus
+    offline: true
+    strengths:
+      - printed text
+      - CPU inference
+      - simple deployment
+    source: https://github.com/tesseract-ocr/tesseract
+    language_models: https://github.com/tesseract-ocr/tessdata
+
+  - id: easyocr
+    name: EasyOCR
+    kind: deep-learning-ocr
+    language_codes:
+      - ru
+    offline: true
+    strengths:
+      - quick setup
+      - scene text
+      - multilingual images
+    source: https://github.com/JaidedAI/EasyOCR
+
+  - id: paddleocr
+    name: PaddleOCR
+    kind: document-ocr-pipeline
+    language_codes:
+      - multilingual
+    offline: true
+    strengths:
+      - text detection and recognition
+      - document structure
+      - batch processing
+    source: https://github.com/PaddlePaddle/PaddleOCR
+
+  - id: kraken
+    name: Kraken
+    kind: trainable-atr
+    language_codes:
+      - model-dependent
+    offline: true
+    strengths:
+      - historical documents
+      - non-Latin scripts
+      - custom training
+    source: https://github.com/mittagessen/kraken
+
+  - id: ocrmypdf
+    name: OCRmyPDF
+    kind: workflow-wrapper
+    language_codes:
+      - backend-dependent
+    offline: true
+    strengths:
+      - searchable PDF
+      - batch PDF processing
+    source: https://github.com/ocrmypdf/OCRmyPDF
+    note: Not an independent recognition model; normally uses Tesseract as a backend.

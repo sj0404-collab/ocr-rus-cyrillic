@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OCR outputs and local datasets
+outputs/
+results/
+data/
+*.hocr
+*.tsv
+*.box
+*.traineddata
+
+# Notebooks and local tooling
+.ipynb_checkpoints/
+.DS_Store
+.idea/
+.vscode/
+
+# Secrets
+.env
+.env.*
+!.env.example
