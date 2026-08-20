@@ -28,3 +28,7 @@ data/
 .env
 .env.*
 !.env.example
+
+# Generated test data
+/tests/samples/*.png
+/tests/samples/*.txt

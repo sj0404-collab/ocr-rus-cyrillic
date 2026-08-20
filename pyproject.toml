@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ocr-rus-cyrillic"
+version = "0.1.0"
+description = "Offline Russian/Cyrillic OCR with ONNX Runtime and bounded consensus passes"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.26",
+  "opencv-python-headless>=4.9",
+  "onnxruntime>=1.17",
+  "rapidocr_onnxruntime>=1.2",
+  "pymorphy3>=2.0",
+  "wordfreq>=3.1",
+]
+
+[project.scripts]
+ocr-rus-cyrillic = "ocr_rus_cyrillic.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
