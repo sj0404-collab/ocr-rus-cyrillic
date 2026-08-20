@@ -9,3 +9,8 @@ def test_confusable_latin_is_converted():
 def test_one_edit_correction():
     assert normalize_russian_text("роверка", allow_dictionary=True) == "проверка"
     assert normalize_russian_text("ешё", allow_dictionary=True) == "ещё"
+
+
+def test_digit_lookalikes_inside_words():
+    assert normalize_russian_text("роверк9", allow_dictionary=True) == "проверка"
+    assert normalize_russian_text("6улок", allow_dictionary=True) == "булок"

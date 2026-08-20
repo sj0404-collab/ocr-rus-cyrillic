@@ -23,7 +23,10 @@ CONFUSABLES = str.maketrans({
 
 RU_LETTERS = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
 ALLOWED_PUNCTUATION = " .,!?;:-()[]{}\"'«»„“”%№+/=…—–"
-_WORD_RE = re.compile(r"[A-Za-zА-Яа-яЁё]+")
+# Digits occasionally replace a visually similar Cyrillic glyph in low-quality
+# manga scans. They are mapped only inside a token that also contains letters.
+DIGIT_CONFUSABLES = str.maketrans({"0": "о", "3": "з", "6": "б", "7": "т", "8": "в", "9": "а"})
+_WORD_RE = re.compile(r"[A-Za-zА-Яа-яЁё0-9]+")
 
 try:  # Optional on Android; the visual-only mode remains usable without it.
     from pymorphy3 import MorphAnalyzer
@@ -116,6 +119,8 @@ def correct_word(word: str, *, allow_dictionary: bool = True) -> str:
     if not word:
         return word
     mapped = map_confusables(word)
+    if any(ch in RU_LETTERS.upper() or ch in RU_LETTERS for ch in mapped):
+        mapped = mapped.translate(DIGIT_CONFUSABLES)
     cyr = "".join(ch for ch in mapped if ch in RU_LETTERS.upper() or ch in RU_LETTERS)
     if not cyr:
         return "".join(ch for ch in mapped if ch.isdigit() or ch in ALLOWED_PUNCTUATION)

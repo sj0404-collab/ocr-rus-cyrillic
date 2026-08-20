@@ -120,7 +120,7 @@ class CyrillicOCR:
         gaps = [runs[i + 1][0] - runs[i][1] - 1 for i in range(len(runs) - 1)]
         # A word gap is usually several times larger than a glyph gap. Keep a
         # minimum so tiny fonts are not split at every antialiased stroke.
-        threshold = max(8, int(round(crop.shape[0] * 0.25)))
+        threshold = max(6, int(round(crop.shape[0] * 0.18)))
         split_after = {i for i, gap in enumerate(gaps) if gap >= threshold}
         if not split_after:
             return [crop]

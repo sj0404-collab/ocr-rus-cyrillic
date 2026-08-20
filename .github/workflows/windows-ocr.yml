@@ -49,10 +49,25 @@ jobs:
           $env:PYTHONPATH = "$PWD\src"
           python scripts\windows_smoke.py
 
-      - name: Upload OCR result
+      - name: Generate legal synthetic manga-style chapter
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = "$PWD\src"
+          python scripts\generate_manga_benchmark.py --pages 3 --output outputs\manga_synthetic
+
+      - name: Scan every synthetic page and write CER report
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = "$PWD\src"
+          python scripts\evaluate_manga_benchmark.py --input outputs\manga_synthetic --output outputs\manga_synthetic_report.json
+
+      - name: Upload OCR and chapter benchmark artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-ocr-smoke-result
-          path: windows-smoke-result.json
+          name: windows-ocr-benchmark
+          path: |
+            windows-smoke-result.json
+            outputs/manga_synthetic_report.json
+            outputs/manga_synthetic/*.png
           if-no-files-found: ignore
