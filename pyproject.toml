@@ -12,7 +12,7 @@ dependencies = [
   "numpy>=1.26",
   "opencv-python-headless>=4.9",
   "onnxruntime>=1.17",
-  "rapidocr_onnxruntime>=1.2",
+  "rapidocr_onnxruntime==1.2.3",
   "pymorphy3>=2.0",
   "wordfreq>=3.1",
 ]
