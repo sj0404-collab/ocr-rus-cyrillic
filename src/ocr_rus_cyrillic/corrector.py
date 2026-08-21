@@ -7,8 +7,11 @@ correction when the morphology dictionary strongly supports it.
 
 from __future__ import annotations
 
+import csv
+import math
 import re
 from functools import lru_cache
+from pathlib import Path
 from typing import Optional
 
 # Only visually plausible confusions are mapped. Unknown Latin is not silently
@@ -39,6 +42,40 @@ except ImportError:  # pragma: no cover
     zipf_frequency = None  # type: ignore[assignment]
 
 _MORPH = MorphAnalyzer() if MorphAnalyzer is not None else None
+
+
+def _load_opencorpora_frequency() -> dict[str, float]:
+    path = Path(__file__).resolve().parents[2] / "models" / "dicts" / "opencorpora_freqrnc2011.tsv"
+    if not path.exists():
+        return {}
+    result: dict[str, float] = {}
+    try:
+        with path.open(encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            for row in reader:
+                word = (row.get("Lemma") or "").strip().lower()
+                if not word:
+                    continue
+                try:
+                    result[word] = max(result.get(word, 0.0), float(row.get("Freq(ipm") or row.get("Freq(ipm)") or 0.0))
+                except (TypeError, ValueError):
+                    continue
+    except OSError:
+        return {}
+    return result
+
+
+_LOCAL_FREQUENCY = _load_opencorpora_frequency()
+
+
+def _frequency_score(word: str) -> float:
+    scores: list[float] = []
+    if zipf_frequency is not None:
+        scores.append(min(1.0, max(0.0, zipf_frequency(word, "ru") / 6.0)))
+    ipm = _LOCAL_FREQUENCY.get(word.lower(), 0.0)
+    if ipm > 0:
+        scores.append(min(1.0, math.log1p(ipm) / 9.0))
+    return max(scores, default=0.0)
 
 
 def map_confusables(text: str) -> str:
@@ -140,9 +177,7 @@ def correct_word(word: str, *, allow_dictionary: bool = True) -> str:
         score = _morph_score(candidate)
         if score <= 0.0:
             continue
-        frequency = 0.0
-        if zipf_frequency is not None:
-            frequency = min(1.0, max(0.0, zipf_frequency(candidate, "ru") / 6.0))
+        frequency = _frequency_score(candidate)
         # Morphology rejects nonsense; frequency breaks ties between valid but
         # rare forms (for example, "проверка" versus a rare technical noun).
         rank = 0.62 * score + 0.38 * frequency
@@ -158,13 +193,13 @@ def correct_word(word: str, *, allow_dictionary: bool = True) -> str:
 @lru_cache(maxsize=4096)
 def _segment_concatenated_word(word: str) -> str:
     """Split an OCR-fused token when a strong Russian word path exists."""
-    if _MORPH is None or zipf_frequency is None or len(word) < 9 or not word.isalpha():
+    if _MORPH is None or (zipf_frequency is None and not _LOCAL_FREQUENCY) or len(word) < 9 or not word.isalpha():
         return word
     lower = word.lower()
     # Never split a token that the Russian dictionary already recognizes as a
     # plausible standalone word. This protects long words such as
     # "покровителем" and "сериализация" from false segmentation.
-    if _morph_score(lower) >= 0.20 and zipf_frequency(lower, "ru") >= 1.0:
+    if _morph_score(lower) >= 0.20 and _frequency_score(lower) >= 0.16:
         return word
     one_letter = {"а", "в", "и", "к", "о", "с", "у", "я"}
     short_words = {"а", "в", "и", "к", "о", "с", "у", "я", "же", "не", "но", "на", "по", "из", "за", "от", "до", "ко", "со"}
@@ -173,13 +208,12 @@ def _segment_concatenated_word(word: str) -> str:
         if len(candidate) == 1:
             return 0.10 if candidate in one_letter else -1.0
         morph = _morph_score(candidate)
-        raw_freq = zipf_frequency(candidate, "ru")
+        freq = _frequency_score(candidate)
         if len(candidate) < 4:
-            if candidate not in short_words or raw_freq < 3.2:
+            if candidate not in short_words or freq < 0.50:
                 return -1.0
-        if morph <= 0.0 and raw_freq < 3.0:
+        if morph <= 0.0 and freq < 0.50:
             return -1.0
-        freq = min(1.2, max(0.0, raw_freq / 5.0))
         return 0.55 * min(1.0, morph / 0.5) + 0.45 * freq
 
     best: list[tuple[float, list[str]]] = [(-10**9, []) for _ in range(len(lower) + 1)]

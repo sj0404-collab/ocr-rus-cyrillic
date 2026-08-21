@@ -33,10 +33,17 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r training\requirements.txt
 
+      - name: Download and extract OpenCorpora Russian sentences
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "opencorpora-2025.tar.gz"
+          Invoke-WebRequest -Uri "https://github.com/mawo-ru/mawo-nlp-data/releases/download/v1.0.0/opencorpora-2025.tar.gz" -OutFile $archive
+          python training\extract_opencorpora.py --archive $archive --output outputs\ru_corpus.txt --max-sentences 100000
+
       - name: Generate varied Russian synthetic dataset
         shell: pwsh
         run: |
-          python training\synthetic_layout.py --samples 200 --output outputs\yolo_russian_synthetic --seed 20260821
+          python training\synthetic_layout.py --samples 200 --corpus outputs\ru_corpus.txt --output outputs\yolo_russian_synthetic --seed 20260821
 
       - name: Train and export YOLO detector
         shell: pwsh
@@ -49,6 +56,7 @@ jobs:
         with:
           name: windows-yolo-cyrillic-detector
           path: |
+            outputs/ru_corpus.txt
             outputs/yolo_russian_synthetic/dataset.yaml
             outputs/yolo_russian_synthetic/manifest.json
             outputs/yolo_training/**/weights/best.pt

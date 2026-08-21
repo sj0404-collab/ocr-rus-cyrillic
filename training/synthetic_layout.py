@@ -196,7 +196,7 @@ def yolo_label(box: tuple[int, int, int, int], width: int, height: int, cls: int
     return f"{cls} {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f}"
 
 
-def generate_sample(index: int, out_dir: Path, fonts: list[Path], rng: random.Random, width: int, height: int) -> dict:
+def generate_sample(index: int, out_dir: Path, fonts: list[Path], corpus: list[str], rng: random.Random, width: int, height: int) -> dict:
     image = make_texture((width, height), rng).convert("RGBA")
     draw = ImageDraw.Draw(image)
     text_boxes: list[tuple[int, int, int, int]] = []
@@ -204,7 +204,7 @@ def generate_sample(index: int, out_dir: Path, fonts: list[Path], rng: random.Ra
     records: list[dict] = []
     layout = rng.choice(["horizontal", "paragraph", "columns", "rtl_columns", "vertical", "curved", "bubble"])
     count = rng.randint(2, 5) if layout in {"columns", "rtl_columns", "bubble"} else rng.randint(1, 3)
-    chosen = [rng.choice(CORPUS) for _ in range(count)]
+    chosen = [rng.choice(corpus) for _ in range(count)]
     font_path = rng.choice(fonts)
     direction = "rtl" if layout == "rtl_columns" else "ltr"
 
@@ -278,12 +278,18 @@ def main() -> None:
     parser.add_argument("--width", type=int, default=1024)
     parser.add_argument("--height", type=int, default=1024)
     parser.add_argument("--seed", type=int, default=20260821)
+    parser.add_argument("--corpus", type=Path, default=None, help="UTF-8 Russian sentence file")
     args = parser.parse_args()
     fonts = font_candidates()
     if not fonts:
         raise SystemExit("No TTF/OTF fonts found")
+    corpus = CORPUS
+    if args.corpus is not None and args.corpus.exists():
+        loaded = [line.strip() for line in args.corpus.read_text(encoding="utf-8").splitlines() if len(line.strip()) >= 12]
+        if loaded:
+            corpus = loaded
     rng = random.Random(args.seed)
-    manifest = [generate_sample(i, args.output, fonts, rng, args.width, args.height) for i in range(args.samples)]
+    manifest = [generate_sample(i, args.output, fonts, corpus, rng, args.width, args.height) for i in range(args.samples)]
     (args.output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     (args.output / "dataset.yaml").write_text(
         f"path: {args.output.resolve().as_posix()}\ntrain: images/train\nval: images/val\nnames:\n  0: text\n  1: bubble\n",

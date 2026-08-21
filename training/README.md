@@ -4,8 +4,11 @@
 
 ## Синтетический YOLO-набор
 
+На Windows workflow сначала извлекается до 100 000 предложений из OpenCorpora 2025 (CC BY-SA), затем они используются как русскоязычный корпус для генерации изображений:
+
 ```powershell
-python training/synthetic_layout.py --samples 120 --output outputs/yolo_russian_synthetic
+python training/extract_opencorpora.py --archive opencorpora-2025.tar.gz --output outputs/ru_corpus.txt --max-sentences 100000
+python training/synthetic_layout.py --samples 200 --corpus outputs/ru_corpus.txt --output outputs/yolo_russian_synthetic
 ```
 
 Генератор покрывает:
