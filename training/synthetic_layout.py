@@ -286,7 +286,7 @@ def main() -> None:
     manifest = [generate_sample(i, args.output, fonts, rng, args.width, args.height) for i in range(args.samples)]
     (args.output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     (args.output / "dataset.yaml").write_text(
-        "path: .\ntrain: images/train\nval: images/val\nnames:\n  0: text\n  1: bubble\n",
+        f"path: {args.output.resolve().as_posix()}\ntrain: images/train\nval: images/val\nnames:\n  0: text\n  1: bubble\n",
         encoding="utf-8",
     )
     print(f"Generated {len(manifest)} samples using {len(fonts)} fonts in {args.output}")
