@@ -65,7 +65,9 @@ models/dicts/ppocrv5_cyrillic_dict.txt
 ```text
 models/tflite/pp-ocrv4_mobile_det_float32.tflite       # [1, 736, 736, 3]
 models/tflite/cyrillic_pp-ocrv3_mobile_rec_float32.tflite # [1, 48, 320, 3]
+models/tflite/cyrillic_pp-ocrv5_mobile_rec_float32.tflite # optional verifier, [1, 48, 320, 3]
 models/dicts/cyrillic_dict.txt
+models/dicts/ppocrv5_cyrillic_dict.txt
 ```
 
 Для TFLite input — NHWC, для recognizer output — `[1, 40, 165]`. Порядок работы:

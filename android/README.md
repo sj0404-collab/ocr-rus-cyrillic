@@ -5,7 +5,9 @@
 ```text
 models/tflite/pp-ocrv4_mobile_det_float32.tflite
 models/tflite/cyrillic_pp-ocrv3_mobile_rec_float32.tflite
+models/tflite/cyrillic_pp-ocrv5_mobile_rec_float32.tflite  # optional verifier
 models/dicts/cyrillic_dict.txt
+models/dicts/ppocrv5_cyrillic_dict.txt
 ```
 
 Скопируйте их в `app/src/main/assets/` и добавьте TensorFlow Lite runtime в APK. Версия библиотеки должна соответствовать вашему Android toolchain; не добавляйте одновременно несколько несовместимых TFLite runtimes.

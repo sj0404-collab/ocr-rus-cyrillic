@@ -34,13 +34,15 @@ The repository includes both ONNX and fixed-shape TFLite artifacts:
 ```text
 models/tflite/pp-ocrv4_mobile_det_float32.tflite
 models/tflite/cyrillic_pp-ocrv3_mobile_rec_float32.tflite
+models/tflite/cyrillic_pp-ocrv5_mobile_rec_float32.tflite
 ```
 
-TFLite input tensors are NHWC. The recognizer input is `[1, 48, 320, 3]`; the output is `[1, 40, 165]`. The detector input is `[1, 736, 736, 3]`. The float32 recognizer conversion was compared with ONNX Runtime on the same normalized crop: maximum absolute output difference was approximately `7e-6` and the argmax sequence matched. The detector TFLite artifact was loaded and invoked on the PC, but its full post-processing benchmark still belongs in the Android integration test.
+TFLite input tensors are NHWC. The recognizer input is `[1, 48, 320, 3]`; the PP-OCRv3 output is `[1, 40, 165]`, and the PP-OCRv5 verifier output is `[1, 40, 852]`. The detector input is `[1, 736, 736, 3]`. Both float32 recognizer conversions were compared with ONNX Runtime on the same normalized crop: the PP-OCRv3 maximum absolute output difference was approximately `7e-6`; the PP-OCRv5 difference was approximately `7e-7`; both argmax sequences matched. The detector TFLite artifact was loaded and invoked on the PC, but its full post-processing benchmark still belongs in the Android integration test.
 
 TFLite SHA-256:
 
 ```text
 3f5fd05d9c6fc1c5b11b832963f486a7ad483eb8e58fd0f9671028119b7160a1  tflite/cyrillic_pp-ocrv3_mobile_rec_float32.tflite
+c51eb8df3eb94cce31f906c23ceb572151d27b0692a8e8bea62a38f6e54f7808  tflite/cyrillic_pp-ocrv5_mobile_rec_float32.tflite
 a2803d3c540e9077e561540285005b77dd2d47f7f5e470e8f2da2c993d9ad9f0  tflite/pp-ocrv4_mobile_det_float32.tflite
 ```
