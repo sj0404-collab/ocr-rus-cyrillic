@@ -8,7 +8,7 @@
 - `dicts/cyrillic_dict.txt` — PP-OCRv3 Cyrillic character dictionary.
 - `dicts/ppocrv5_cyrillic_dict.txt` — PP-OCRv5 Cyrillic character dictionary.
 
-The recognition model is a pretrained model, not a new model trained from scratch in this workspace. No labeled user dataset was supplied, so claiming a new 90%+ benchmark would be misleading. The wrapper masks non-Russian output classes and adds bounded visual consensus plus conservative Russian post-processing.
+The recognition model is a pretrained model, not a new model trained from scratch in this workspace. No labeled user dataset was supplied, so claiming a new 90%+ benchmark would be misleading. The wrapper masks non-Russian output classes and adds bounded visual consensus plus conservative Russian post-processing. On uncertain crops, the optional PP-OCRv5 ONNX verifier runs as a second engine; agreement increases confidence, disagreement forces `certain=false`.
 
 ## Upstream and license
 

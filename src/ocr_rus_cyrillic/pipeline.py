@@ -150,11 +150,82 @@ class CyrillicOCR:
             result.append(crop[:, left:right])
         return result
 
-    def recognize_page(self, image: np.ndarray | str | Path) -> OCRResult:
+    @staticmethod
+    def _find_white_bubbles(image: np.ndarray) -> list[tuple[int, int, int, int]]:
+        """Find large white outlined speech bubbles as a safe page fallback."""
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        mask = ((gray > 245) * 255).astype(np.uint8)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        height, width = gray.shape[:2]
+        found: list[tuple[int, int, int, int, float]] = []
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            area = float(cv2.contourArea(contour))
+            fill = area / max(1.0, float(w * h))
+            if (
+                area >= 15000
+                and w >= 100
+                and h >= 60
+                and x > 10
+                and y > 10
+                and x + w < width - 10
+                and y + h < height - 10
+                and 1.15 <= w / max(h, 1) <= 5.5
+                and fill >= 0.60
+            ):
+                found.append((x, y, w, h, area))
+        found.sort(key=lambda item: (item[1], item[0]))
+        return [(x, y, w, h) for x, y, w, h, _ in found]
+
+    def _recognize_bubble_page(
+        self,
+        source: np.ndarray,
+        bubbles: list[tuple[int, int, int, int]],
+    ) -> OCRResult:
+        results: list[dict[str, Any]] = []
+        for x, y, w, h in bubbles:
+            crop = source[y:y + h, x:x + w]
+            # Re-run the normal detector inside the bubble, which removes most
+            # of the page art and gives the recognizer a much cleaner crop.
+            region = self.recognize_page(crop, bubble_mode=False)
+            results.append({
+                "box": [[x, y], [x + w, y], [x + w, y + h], [x, y + h]],
+                "text": region.text,
+                "confidence": region.confidence,
+                "certain": region.certain,
+                "passes": region.passes,
+                "engine": "bubble-fallback",
+            })
+        text = "\n".join(r["text"] for r in results if r["text"])
+        return OCRResult(
+            text=normalize_russian_text(text, allow_dictionary=True),
+            confidence=round(min((float(r["confidence"]) for r in results), default=0.0), 4),
+            certain=bool(results) and all(bool(r["certain"]) for r in results),
+            passes=max((int(r["passes"]) for r in results), default=0),
+            boxes=[r["box"] for r in results],
+            lines=results,
+        )
+
+    def recognize_page(
+        self,
+        image: np.ndarray | str | Path,
+        *,
+        bubble_mode: bool = True,
+    ) -> OCRResult:
         if isinstance(image, (str, Path)):
             image = cv2.imread(str(image))
         if image is None:
             raise ValueError("image could not be loaded")
+        if bubble_mode:
+            bubbles = self._find_white_bubbles(image)
+            # Require several candidates to avoid replacing normal document OCR
+            # with a false positive from a single white region.
+            if len(bubbles) >= 3:
+                bubble_result = self._recognize_bubble_page(image, bubbles)
+                normal_result = self.recognize_page(image, bubble_mode=False)
+                if normal_result.certain != bubble_result.certain:
+                    return normal_result if normal_result.certain else bubble_result
+                return bubble_result if bubble_result.confidence > normal_result.confidence else normal_result
 
         # The bundled mobile detector is exported with a fixed 736x736 input.
         # Letterbox instead of stretching, then map polygons back to the source.
