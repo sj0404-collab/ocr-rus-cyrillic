@@ -10,6 +10,8 @@
 
 The recognition model is a pretrained model, not a new model trained from scratch in this workspace. No labeled user dataset was supplied, so claiming a new 90%+ benchmark would be misleading. The wrapper masks non-Russian output classes and adds bounded visual consensus plus conservative Russian post-processing. On uncertain crops, the optional PP-OCRv5 ONNX verifier runs as a second engine; agreement increases confidence, disagreement forces `certain=false`.
 
+A first YOLO text/bubble detector was trained on 200 varied synthetic pages on the Windows runner for 15 CPU epochs. Its held-out synthetic metrics were `mAP50=0.88867` and `mAP50-95=0.62624`. These are synthetic-only metrics and must not be read as real-camera accuracy.
+
 ## Upstream and license
 
 - Primary recognition model: [PaddlePaddle/cyrillic_PP-OCRv3_mobile_rec](https://huggingface.co/PaddlePaddle/cyrillic_PP-OCRv3_mobile_rec), Apache-2.0.
@@ -45,4 +47,5 @@ TFLite SHA-256:
 3f5fd05d9c6fc1c5b11b832963f486a7ad483eb8e58fd0f9671028119b7160a1  tflite/cyrillic_pp-ocrv3_mobile_rec_float32.tflite
 c51eb8df3eb94cce31f906c23ceb572151d27b0692a8e8bea62a38f6e54f7808  tflite/cyrillic_pp-ocrv5_mobile_rec_float32.tflite
 a2803d3c540e9077e561540285005b77dd2d47f7f5e470e8f2da2c993d9ad9f0  tflite/pp-ocrv4_mobile_det_float32.tflite
+5140cb61bb27e2c737e28f6a3ad58e65c321d2ae39b599c16a829b8f2c5d04db  onnx/yolo_cyrillic_text_bubble_best.onnx
 ```

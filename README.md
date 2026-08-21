@@ -37,7 +37,7 @@ PYTHONPATH=src python -m ocr_rus_cyrillic.cli path/to/page.jpg --json --target 0
 PYTHONPATH=src python -m ocr_rus_cyrillic.cli path/to/page.jpg --json --yolo-model outputs/yolo_training/cyrillic_text_yolo/weights/best.onnx
 ```
 
-YOLO-классы: `0=text`, `1=bubble`. Если YOLO-модель не найдена или не дала text boxes, pipeline автоматически возвращается к PP-OCR detector.
+YOLO-классы: `0=text`, `1=bubble`. Готовый первый checkpoint находится в `models/onnx/yolo_cyrillic_text_bubble_best.onnx`; его held-out synthetic metrics: `mAP50=0.88867`, `mAP50-95=0.62624`. Это не метрика на реальных фото. Если YOLO-модель не найдена или не дала text boxes, pipeline автоматически возвращается к PP-OCR detector.
 
 Пример результата:
 
