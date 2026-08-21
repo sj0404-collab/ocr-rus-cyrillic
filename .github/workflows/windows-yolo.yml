@@ -36,12 +36,12 @@ jobs:
       - name: Generate varied Russian synthetic dataset
         shell: pwsh
         run: |
-          python training\synthetic_layout.py --samples 120 --output outputs\yolo_russian_synthetic --seed 20260821
+          python training\synthetic_layout.py --samples 200 --output outputs\yolo_russian_synthetic --seed 20260821
 
       - name: Train and export YOLO detector
         shell: pwsh
         run: |
-          python training\train_yolo.py --data outputs\yolo_russian_synthetic\dataset.yaml --output outputs\yolo_training --epochs 5 --imgsz 640 --batch 4
+          python training\train_yolo.py --data outputs\yolo_russian_synthetic\dataset.yaml --output outputs\yolo_training --epochs 15 --imgsz 640 --batch 4
 
       - name: Upload dataset summary and detector
         if: always()

@@ -42,12 +42,17 @@ class YoloTextDetector:
             pass
         else:
             output = output.reshape(-1, output.shape[-1])
+        # Raw YOLOv8/11 exports usually have thousands of rows (xywh + class
+        # scores); exports with built-in NMS have only a few hundred rows of
+        # x1,y1,x2,y2,score,class. The column count alone is ambiguous for a
+        # two-class raw model, so use the row count as the discriminator.
+        raw_yolo = output.shape[0] > 100
 
         boxes: list[list[int]] = []
         scores: list[float] = []
         classes: list[int] = []
         for row in output:
-            if len(row) >= 6 and len(row) <= 7:
+            if not raw_yolo and len(row) >= 6:
                 # Export with NMS: x1,y1,x2,y2,score,class.
                 x1, y1, x2, y2, score, cls = row[:6]
                 score, cls = float(score), int(cls)
