@@ -18,6 +18,13 @@ mAP50:     0.88867
 mAP50-95:  0.62624
 ```
 
-The exported model is `models/onnx/yolo_cyrillic_text_bubble_best.onnx`.
+The exported synthetic-only model is `models/onnx/yolo_cyrillic_text_bubble_best.onnx`.
 
-These metrics only describe the generated synthetic validation split. They do not establish 90%+ accuracy on real manga pages or camera photos. The next validation step is to run the detector on licensed/user-provided pages and measure text-box recall, reading order, CER and WER separately.
+A second run first extracted up to 100,000 Russian sentences from OpenCorpora 2025 and used them in the synthetic renderer. Its final held-out metrics were:
+
+```text
+mAP50:     0.75632
+mAP50-95:  0.52320
+```
+
+That model is `models/onnx/yolo_cyrillic_opencorpora_best.onnx`. The synthetic-only model scores higher on its easier distribution, while the OpenCorpora model covers a broader Russian vocabulary. Neither metric establishes 90%+ accuracy on real manga pages or camera photos. The next validation step is to run both detectors on licensed/user-provided pages and measure text-box recall, reading order, CER and WER separately.
