@@ -14,6 +14,7 @@ from rapidocr_onnxruntime.ch_ppocr_v3_det.text_detect import TextDetector
 from .corrector import normalize_russian_text
 from .ensemble import EnsembleRecognizer
 from .recognizer import CyrillicRecognizer
+from .yolo_detector import YoloTextDetector
 
 
 @dataclass
@@ -47,12 +48,14 @@ class CyrillicOCR:
         dictionary_path: str | Path,
         secondary_recognizer_path: str | Path | None = None,
         secondary_dictionary_path: str | Path | None = None,
+        yolo_detector_path: str | Path | None = None,
         target_confidence: float = 0.90,
         max_passes: int = 4,
     ) -> None:
         self.target_confidence = target_confidence
         self.max_passes = max_passes
         self.detector_input_size = 736
+        self.yolo_detector = YoloTextDetector(yolo_detector_path) if yolo_detector_path is not None else None
         self.detector = TextDetector(
             {
                 "model_path": str(detector_path),
@@ -227,26 +230,33 @@ class CyrillicOCR:
                     return normal_result if normal_result.certain else bubble_result
                 return bubble_result if bubble_result.confidence > normal_result.confidence else normal_result
 
-        # The bundled mobile detector is exported with a fixed 736x736 input.
-        # Letterbox instead of stretching, then map polygons back to the source.
         source = image
         src_h, src_w = source.shape[:2]
-        scale = min(self.detector_input_size / max(src_w, 1), self.detector_input_size / max(src_h, 1))
-        resized = cv2.resize(source, (max(1, int(round(src_w * scale))), max(1, int(round(src_h * scale)))))
-        detector_image = np.full(
-            (self.detector_input_size, self.detector_input_size, 3), 255, dtype=np.uint8
-        )
-        offset_x = (self.detector_input_size - resized.shape[1]) // 2
-        offset_y = (self.detector_input_size - resized.shape[0]) // 2
-        detector_image[offset_y:offset_y + resized.shape[0], offset_x:offset_x + resized.shape[1]] = resized
-
-        boxes, _ = self.detector(detector_image)
         source_boxes: list[np.ndarray] = []
-        for box in self._sorted_boxes(boxes):
-            mapped = (np.asarray(box, dtype=np.float32) - np.array([offset_x, offset_y], dtype=np.float32)) / scale
-            mapped[:, 0] = np.clip(mapped[:, 0], 0, src_w - 1)
-            mapped[:, 1] = np.clip(mapped[:, 1], 0, src_h - 1)
-            source_boxes.append(mapped)
+        if self.yolo_detector is not None:
+            # YOLO class 0 is text. Class 1 (bubble) remains available to a
+            # caller that wants bubble-aware crops before this stage.
+            yolo_items = self.yolo_detector.detect(source)
+            source_boxes = [points for points, cls, _score in yolo_items if cls == 0]
+
+        if not source_boxes:
+            # The bundled mobile detector is exported with a fixed 736x736 input.
+            # Letterbox instead of stretching, then map polygons back to source.
+            scale = min(self.detector_input_size / max(src_w, 1), self.detector_input_size / max(src_h, 1))
+            resized = cv2.resize(source, (max(1, int(round(src_w * scale))), max(1, int(round(src_h * scale)))))
+            detector_image = np.full(
+                (self.detector_input_size, self.detector_input_size, 3), 255, dtype=np.uint8
+            )
+            offset_x = (self.detector_input_size - resized.shape[1]) // 2
+            offset_y = (self.detector_input_size - resized.shape[0]) // 2
+            detector_image[offset_y:offset_y + resized.shape[0], offset_x:offset_x + resized.shape[1]] = resized
+
+            boxes, _ = self.detector(detector_image)
+            for box in self._sorted_boxes(boxes):
+                mapped = (np.asarray(box, dtype=np.float32) - np.array([offset_x, offset_y], dtype=np.float32)) / scale
+                mapped[:, 0] = np.clip(mapped[:, 0], 0, src_w - 1)
+                mapped[:, 1] = np.clip(mapped[:, 1], 0, src_h - 1)
+                source_boxes.append(mapped)
         line_results: list[dict[str, Any]] = []
         for box in source_boxes:
             crop = self._crop_quad(source, box)

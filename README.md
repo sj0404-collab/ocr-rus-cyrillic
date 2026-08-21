@@ -31,6 +31,14 @@ PYTHONPATH=src python -m ocr_rus_cyrillic.cli tests/fixtures/sample_word.png --j
 PYTHONPATH=src python -m ocr_rus_cyrillic.cli path/to/page.jpg --json --target 0.90 --passes 4
 ```
 
+После обучения YOLO можно подключить его ONNX-детектор:
+
+```bash
+PYTHONPATH=src python -m ocr_rus_cyrillic.cli path/to/page.jpg --json --yolo-model outputs/yolo_training/cyrillic_text_yolo/weights/best.onnx
+```
+
+YOLO-классы: `0=text`, `1=bubble`. Если YOLO-модель не найдена или не дала text boxes, pipeline автоматически возвращается к PP-OCR detector.
+
 Пример результата:
 
 ```json
@@ -95,7 +103,8 @@ Float32 TFLite проверен на ПК: logits совпали с ONNX с ма
 .
 ├── models/                         # ONNX/TFLite-модели и словарь
 ├── android/                        # Kotlin пример для TFLite text-line recognizer
-├── src/ocr_rus_cyrillic/           # recognizer, corrector, page pipeline, CLI
+├── training/                       # synthetic layouts and YOLO fine-tune scripts
+├── src/ocr_rus_cyrillic/           # recognizer, corrector, page pipeline, CLI, YOLO adapter
 ├── tests/                          # тесты постобработки и маленький fixture
 ├── benchmark/README.md             # формат будущего CER/WER benchmark
 ├── MODEL_CARD.md                   # происхождение и SHA-256 моделей

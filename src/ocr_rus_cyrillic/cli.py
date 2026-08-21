@@ -13,6 +13,7 @@ def main() -> None:
     parser.add_argument("--json", action="store_true", dest="as_json")
     parser.add_argument("--target", type=float, default=0.90, help="confidence threshold")
     parser.add_argument("--passes", type=int, default=4, help="maximum visual passes")
+    parser.add_argument("--yolo-model", type=Path, default=None, help="optional exported YOLO text detector ONNX")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     secondary_model = root / "models/onnx/cyrillic_pp-ocrv5_mobile_rec.onnx"
@@ -23,6 +24,7 @@ def main() -> None:
         dictionary_path=root / "models/dicts/cyrillic_dict.txt",
         secondary_recognizer_path=secondary_model if secondary_model.exists() else None,
         secondary_dictionary_path=secondary_dict if secondary_dict.exists() else None,
+        yolo_detector_path=args.yolo_model,
         target_confidence=args.target,
         max_passes=args.passes,
     )
