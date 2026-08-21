@@ -1,0 +1,67 @@
+name: Windows OCR engine comparison
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'benchmark/compare_engines.py'
+      - 'benchmark/requirements-engines.txt'
+      - 'benchmark/pollination_pages/final/**'
+      - 'src/**'
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            benchmark/requirements-engines.txt
+
+      - name: Install our OCR runtime
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest
+
+      - name: Install comparison engines
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          python -m pip install -r benchmark\requirements-engines.txt
+
+      - name: Install Tesseract Russian runtime
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          choco install tesseract -y --no-progress
+          $dir = "C:\Program Files\Tesseract-OCR\tessdata"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/rus.traineddata" -OutFile "$dir\rus.traineddata"
+          "C:\Program Files\Tesseract-OCR" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Run comparison
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = "$PWD\src"
+          python benchmark\compare_engines.py --input benchmark\pollination_pages\final --output outputs\engine_comparison.json --easyocr --manga-ocr
+
+      - name: Upload comparison report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-engine-comparison
+          path: outputs/engine_comparison.json
+          if-no-files-found: ignore

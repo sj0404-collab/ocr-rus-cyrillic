@@ -85,7 +85,7 @@ class CyrillicRecognizer:
         padded[:, :, :resized_w] = resized
         return padded
 
-    def _variants(self, image: np.ndarray) -> Iterable[tuple[str, np.ndarray]]:
+    def _variants(self, image: np.ndarray, *, extended: bool = False) -> Iterable[tuple[str, np.ndarray]]:
         base = self._trim(image, margin=4)
         yield "raw", base
 
@@ -96,6 +96,28 @@ class CyrillicRecognizer:
         blur = cv2.GaussianBlur(gray, (3, 3), 0)
         otsu = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
         yield "otsu", cv2.cvtColor(otsu, cv2.COLOR_GRAY2BGR)
+
+        if not extended:
+            return
+
+        # Extended agents are only used after the first pass is uncertain. They
+        # target exactly the cases seen in manga/manhwa screenshots: white text
+        # on dark panels, colored low-contrast lettering, and vertical text.
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(gray)
+        yield "clahe", cv2.cvtColor(clahe, cv2.COLOR_GRAY2BGR)
+
+        otsu_inv = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        yield "otsu_inv", cv2.cvtColor(otsu_inv, cv2.COLOR_GRAY2BGR)
+
+        adaptive = cv2.adaptiveThreshold(
+            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 11
+        )
+        yield "adaptive", cv2.cvtColor(adaptive, cv2.COLOR_GRAY2BGR)
+
+        h, w = base.shape[:2]
+        if h > w * 1.20:
+            yield "rot90", np.ascontiguousarray(np.rot90(base, 1))
+            yield "rot270", np.ascontiguousarray(np.rot90(base, 3))
 
     def _decode(self, predictions: np.ndarray, variant: str) -> Candidate:
         probs = np.asarray(predictions)
@@ -135,9 +157,9 @@ class CyrillicRecognizer:
         predictions = self.session.run(None, {self.input_name: batch})[0]
         return self._decode(predictions, variant)
 
-    def recognize_variants(self, image: np.ndarray) -> list[Candidate]:
+    def recognize_variants(self, image: np.ndarray, *, extended: bool = False) -> list[Candidate]:
         candidates: list[Candidate] = []
-        for name, variant in self._variants(image):
+        for name, variant in self._variants(image, extended=extended):
             candidates.append(self.recognize_once(variant, variant=name))
         return candidates
 
@@ -153,7 +175,7 @@ class CyrillicRecognizer:
         margins = [4, 6, 8, 10]
         for pass_no in range(max_passes):
             crop = self._trim(image, margin=margins[min(pass_no, len(margins) - 1)])
-            candidates = self.recognize_variants(crop)
+            candidates = self.recognize_variants(crop, extended=pass_no > 0)
             all_candidates.extend(candidates)
 
             # Normalize only for comparison; keep raw visual candidate in the

@@ -106,7 +106,8 @@ Float32 TFLite проверен на ПК: logits совпали с ONNX с ма
 ├── training/                       # synthetic layouts and YOLO fine-tune scripts
 ├── src/ocr_rus_cyrillic/           # recognizer, corrector, page pipeline, CLI, YOLO adapter
 ├── tests/                          # тесты постобработки и маленький fixture
-├── benchmark/README.md             # формат будущего CER/WER benchmark
+├── benchmark/README.md             # формат CER/WER benchmark
+├── benchmark/ENGINE_COMPARISON.md  # EasyOCR/Tesseract/Manga OCR comparison
 ├── MODEL_CARD.md                   # происхождение и SHA-256 моделей
 └── requirements.txt
 ```
