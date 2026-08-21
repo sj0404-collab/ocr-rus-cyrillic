@@ -14,3 +14,8 @@ def test_one_edit_correction():
 def test_digit_lookalikes_inside_words():
     assert normalize_russian_text("роверк9", allow_dictionary=True) == "проверка"
     assert normalize_russian_text("6улок", allow_dictionary=True) == "булок"
+
+
+def test_fused_russian_words_can_be_separated_conservatively():
+    assert normalize_russian_text("КАКАЯЖЕУЖАСНАЯ") == "КАКАЯ ЖЕ УЖАСНАЯ"
+    assert normalize_russian_text("ПОСЛЕДНИЙВОИНЧЕЛОВЕЧЕСТВА") == "ПОСЛЕДНИЙ ВОИН ЧЕЛОВЕЧЕСТВА"

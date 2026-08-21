@@ -190,7 +190,7 @@ class CyrillicOCR:
             crop = source[y:y + h, x:x + w]
             # Re-run the normal detector inside the bubble, which removes most
             # of the page art and gives the recognizer a much cleaner crop.
-            region = self.recognize_page(crop, bubble_mode=False)
+            region = self.recognize_page(crop, bubble_mode=False, use_yolo=False)
             results.append({
                 "box": [[x, y], [x + w, y], [x + w, y + h], [x, y + h]],
                 "text": region.text,
@@ -214,6 +214,7 @@ class CyrillicOCR:
         image: np.ndarray | str | Path,
         *,
         bubble_mode: bool = True,
+        use_yolo: bool = True,
     ) -> OCRResult:
         if isinstance(image, (str, Path)):
             image = cv2.imread(str(image))
@@ -233,7 +234,7 @@ class CyrillicOCR:
         source = image
         src_h, src_w = source.shape[:2]
         source_boxes: list[np.ndarray] = []
-        if self.yolo_detector is not None:
+        if use_yolo and self.yolo_detector is not None:
             # YOLO class 0 is text. Class 1 (bubble) remains available to a
             # caller that wants bubble-aware crops before this stage.
             yolo_items = self.yolo_detector.detect(source)

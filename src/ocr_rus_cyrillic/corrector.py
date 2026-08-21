@@ -155,6 +155,59 @@ def correct_word(word: str, *, allow_dictionary: bool = True) -> str:
     return _restore_case(source_case, lower)
 
 
+@lru_cache(maxsize=4096)
+def _segment_concatenated_word(word: str) -> str:
+    """Split an OCR-fused token when a strong Russian word path exists."""
+    if _MORPH is None or zipf_frequency is None or len(word) < 9 or not word.isalpha():
+        return word
+    lower = word.lower()
+    # Never split a token that the Russian dictionary already recognizes as a
+    # plausible standalone word. This protects long words such as
+    # "покровителем" and "сериализация" from false segmentation.
+    if _morph_score(lower) >= 0.20 and zipf_frequency(lower, "ru") >= 1.0:
+        return word
+    one_letter = {"а", "в", "и", "к", "о", "с", "у", "я"}
+    short_words = {"а", "в", "и", "к", "о", "с", "у", "я", "же", "не", "но", "на", "по", "из", "за", "от", "до", "ко", "со"}
+
+    def score(candidate: str) -> float:
+        if len(candidate) == 1:
+            return 0.10 if candidate in one_letter else -1.0
+        morph = _morph_score(candidate)
+        raw_freq = zipf_frequency(candidate, "ru")
+        if len(candidate) < 4:
+            if candidate not in short_words or raw_freq < 3.2:
+                return -1.0
+        if morph <= 0.0 and raw_freq < 3.0:
+            return -1.0
+        freq = min(1.2, max(0.0, raw_freq / 5.0))
+        return 0.55 * min(1.0, morph / 0.5) + 0.45 * freq
+
+    best: list[tuple[float, list[str]]] = [(-10**9, []) for _ in range(len(lower) + 1)]
+    best[0] = (0.0, [])
+    for start in range(len(lower)):
+        if best[start][0] < -10**8:
+            continue
+        for end in range(start + 1, min(len(lower), start + 20) + 1):
+            part = lower[start:end]
+            part_score = score(part)
+            if part_score < 0:
+                continue
+            boundary_penalty = (1.35 if len(part) == 1 else 0.95) if start else 0.0
+            candidate_score = best[start][0] + part_score - boundary_penalty
+            if candidate_score > best[end][0]:
+                best[end] = (candidate_score, best[start][1] + [part])
+
+    base = score(lower)
+    total, pieces = best[-1]
+    if len(pieces) <= 1 or total < base + 0.25:
+        return word
+    if word.isupper():
+        pieces = [piece.upper() for piece in pieces]
+    elif word[:1].isupper():
+        pieces = [pieces[0].capitalize(), *pieces[1:]]
+    return " ".join(pieces)
+
+
 def normalize_russian_text(text: str, *, allow_dictionary: bool = True) -> str:
     """Normalize an OCR string without inventing unobserved content."""
     text = map_confusables(text)
@@ -162,7 +215,10 @@ def normalize_russian_text(text: str, *, allow_dictionary: bool = True) -> str:
     pos = 0
     for match in _WORD_RE.finditer(text):
         parts.append(text[pos : match.start()])
-        parts.append(correct_word(match.group(0), allow_dictionary=allow_dictionary))
+        corrected = correct_word(match.group(0), allow_dictionary=allow_dictionary)
+        if allow_dictionary:
+            corrected = _segment_concatenated_word(corrected)
+        parts.append(corrected)
         pos = match.end()
     parts.append(text[pos:])
     result = "".join(parts)
