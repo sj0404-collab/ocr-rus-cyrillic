@@ -61,6 +61,12 @@ jobs:
           $env:PYTHONPATH = "$PWD\src"
           python scripts\evaluate_manga_benchmark.py --input outputs\manga_synthetic --output outputs\manga_synthetic_report.json
 
+      - name: Scan every original AI-generated Russian manga page
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = "$PWD\src"
+          python scripts\evaluate_manga_benchmark.py --input benchmark\pollination_pages\final --output outputs\pollination_report.json
+
       - name: Upload OCR and chapter benchmark artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -70,4 +76,6 @@ jobs:
             windows-smoke-result.json
             outputs/manga_synthetic_report.json
             outputs/manga_synthetic/*.png
+            outputs/pollination_report.json
+            benchmark/pollination_pages/final/*.png
           if-no-files-found: ignore
