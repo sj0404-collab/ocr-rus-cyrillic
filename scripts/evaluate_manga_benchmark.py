@@ -39,6 +39,8 @@ def main() -> None:
         detector_path=root / "models/onnx/pp-ocrv4_mobile_det.onnx",
         recognizer_path=root / "models/onnx/cyrillic_pp-ocrv3_mobile_rec.onnx",
         dictionary_path=root / "models/dicts/cyrillic_dict.txt",
+        secondary_recognizer_path=root / "models/onnx/cyrillic_pp-ocrv5_mobile_rec.onnx",
+        secondary_dictionary_path=root / "models/dicts/ppocrv5_cyrillic_dict.txt",
         target_confidence=0.90,
         max_passes=4,
     )

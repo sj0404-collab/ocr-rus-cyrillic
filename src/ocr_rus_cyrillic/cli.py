@@ -15,10 +15,14 @@ def main() -> None:
     parser.add_argument("--passes", type=int, default=4, help="maximum visual passes")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
+    secondary_model = root / "models/onnx/cyrillic_pp-ocrv5_mobile_rec.onnx"
+    secondary_dict = root / "models/dicts/ppocrv5_cyrillic_dict.txt"
     ocr = CyrillicOCR(
         detector_path=root / "models/onnx/pp-ocrv4_mobile_det.onnx",
         recognizer_path=root / "models/onnx/cyrillic_pp-ocrv3_mobile_rec.onnx",
         dictionary_path=root / "models/dicts/cyrillic_dict.txt",
+        secondary_recognizer_path=secondary_model if secondary_model.exists() else None,
+        secondary_dictionary_path=secondary_dict if secondary_dict.exists() else None,
         target_confidence=args.target,
         max_passes=args.passes,
     )

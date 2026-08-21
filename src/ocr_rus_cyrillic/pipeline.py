@@ -12,6 +12,7 @@ import numpy as np
 from rapidocr_onnxruntime.ch_ppocr_v3_det.text_detect import TextDetector
 
 from .corrector import normalize_russian_text
+from .ensemble import EnsembleRecognizer
 from .recognizer import CyrillicRecognizer
 
 
@@ -44,6 +45,8 @@ class CyrillicOCR:
         detector_path: str | Path,
         recognizer_path: str | Path,
         dictionary_path: str | Path,
+        secondary_recognizer_path: str | Path | None = None,
+        secondary_dictionary_path: str | Path | None = None,
         target_confidence: float = 0.90,
         max_passes: int = 4,
     ) -> None:
@@ -64,7 +67,12 @@ class CyrillicOCR:
                 "score_mode": "fast",
             }
         )
-        self.recognizer = CyrillicRecognizer(recognizer_path, dictionary_path)
+        primary = CyrillicRecognizer(recognizer_path, dictionary_path)
+        if secondary_recognizer_path is not None and secondary_dictionary_path is not None:
+            secondary = CyrillicRecognizer(secondary_recognizer_path, secondary_dictionary_path)
+            self.recognizer = EnsembleRecognizer(primary, secondary)
+        else:
+            self.recognizer = primary
 
     @staticmethod
     def _sorted_boxes(boxes: np.ndarray) -> list[np.ndarray]:
@@ -120,7 +128,9 @@ class CyrillicOCR:
         gaps = [runs[i + 1][0] - runs[i][1] - 1 for i in range(len(runs) - 1)]
         # A word gap is usually several times larger than a glyph gap. Keep a
         # minimum so tiny fonts are not split at every antialiased stroke.
-        threshold = max(6, int(round(crop.shape[0] * 0.18)))
+        positive_gaps = [gap for gap in gaps if gap > 0]
+        median_gap = float(np.median(positive_gaps)) if positive_gaps else 1.0
+        threshold = max(5, int(round(median_gap * 1.7)))
         split_after = {i for i, gap in enumerate(gaps) if gap >= threshold}
         if not split_after:
             return [crop]

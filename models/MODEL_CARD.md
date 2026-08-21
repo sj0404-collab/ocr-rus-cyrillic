@@ -4,13 +4,16 @@
 
 - `onnx/cyrillic_pp-ocrv3_mobile_rec.onnx` — PP-OCRv3 mobile recognition model, converted to ONNX and distributed by the OAR OCR project.
 - `onnx/pp-ocrv4_mobile_det.onnx` — lightweight PP-OCR text detector.
-- `dicts/cyrillic_dict.txt` — PaddleOCR Cyrillic character dictionary.
+- `onnx/cyrillic_pp-ocrv5_mobile_rec.onnx` — optional second Cyrillic verifier, loaded only for uncertain crops.
+- `dicts/cyrillic_dict.txt` — PP-OCRv3 Cyrillic character dictionary.
+- `dicts/ppocrv5_cyrillic_dict.txt` — PP-OCRv5 Cyrillic character dictionary.
 
 The recognition model is a pretrained model, not a new model trained from scratch in this workspace. No labeled user dataset was supplied, so claiming a new 90%+ benchmark would be misleading. The wrapper masks non-Russian output classes and adds bounded visual consensus plus conservative Russian post-processing.
 
 ## Upstream and license
 
-- Original recognition model: [PaddlePaddle/cyrillic_PP-OCRv3_mobile_rec](https://huggingface.co/PaddlePaddle/cyrillic_PP-OCRv3_mobile_rec), Apache-2.0.
+- Primary recognition model: [PaddlePaddle/cyrillic_PP-OCRv3_mobile_rec](https://huggingface.co/PaddlePaddle/cyrillic_PP-OCRv3_mobile_rec), Apache-2.0.
+- Optional verifier: [PaddlePaddle/cyrillic_PP-OCRv5_mobile_rec](https://huggingface.co/PaddlePaddle/cyrillic_PP-OCRv5_mobile_rec), Apache-2.0.
 - ONNX conversion/release: [GreatV/oar-ocr](https://github.com/GreatV/oar-ocr), check its repository and release license notices.
 - Detector: [GreatV/oar-ocr release](https://github.com/GreatV/oar-ocr/releases/tag/v0.3.0).
 
@@ -18,8 +21,10 @@ SHA-256:
 
 ```text
 6ab2b46cee27755f82cacd86a73706f00146f1938aa5c74549a4fb2d1f94ae9c  onnx/cyrillic_pp-ocrv3_mobile_rec.onnx
+a18d96d7c8d73d90f2ed056549caa1de3a8e6cb744cccba16cd593ea8cd2d569  onnx/cyrillic_pp-ocrv5_mobile_rec.onnx
 ab2a50dcd2c340852f2d0fbfa547d5eec79a0d04a774eb0b622d96d0d9d2ceeb  onnx/pp-ocrv4_mobile_det.onnx
 369a82c6c8c479784a5d726448b83b1eafb5fef0a4129a5eaa3929625ddcd132  dicts/cyrillic_dict.txt
+db40aa52ceb112055be80c694afdf655d5d2c4f7873704524cc16a447ca913ba  dicts/ppocrv5_cyrillic_dict.txt
 ```
 
 ## Mobile formats

@@ -7,6 +7,7 @@
 ## Что уже собрано
 
 - мобильная модель распознавания `cyrillic_pp-ocrv3_mobile_rec.onnx`;
+- второй независимый verifier `cyrillic_pp-ocrv5_mobile_rec.onnx`, который запускается только на сомнительных crops;
 - лёгкий детектор текста `pp-ocrv4_mobile_det.onnx`;
 - русский/Cyrillic whitelist на этапе CTC-декодирования;
 - 3 варианта предобработки: raw, grayscale, Otsu;
@@ -52,8 +53,12 @@ PYTHONPATH=src python -m ocr_rus_cyrillic.cli path/to/page.jpg --json --target 0
 ```text
 models/onnx/pp-ocrv4_mobile_det.onnx
 models/onnx/cyrillic_pp-ocrv3_mobile_rec.onnx
+models/onnx/cyrillic_pp-ocrv5_mobile_rec.onnx   # optional verifier
 models/dicts/cyrillic_dict.txt
+models/dicts/ppocrv5_cyrillic_dict.txt
 ```
+
+`ppocrv5` используется как второй ONNX-проход только при низкой уверенности первого движка. Если движки расходятся, результат остаётся `certain=false`.
 
 **TFLite, фиксированный CPU-friendly float32 input:**
 
