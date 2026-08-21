@@ -112,6 +112,8 @@ Float32 TFLite проверен на ПК: logits совпали с ONNX с ма
 ├── tests/                          # тесты постобработки и маленький fixture
 ├── benchmark/README.md             # формат CER/WER benchmark
 ├── benchmark/ENGINE_COMPARISON.md  # EasyOCR/Tesseract/Manga OCR comparison
+├── docs/LIVE_SCAN.md               # live cache и Android/PC поток
+├── docs/DISCORD_STATUS.md          # обновляемый статус для Discord
 ├── MODEL_CARD.md                   # происхождение и SHA-256 моделей
 └── requirements.txt
 ```
