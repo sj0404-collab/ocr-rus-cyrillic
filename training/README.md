@@ -2,13 +2,28 @@
 
 В этой рабочей сессии размеченный набор пользователя отсутствовал, поэтому модель не переобучалась на случайно скачанных страницах. Вместо этого выбран готовый мобильный Cyrillic checkpoint и добавлен Russian-only decode mask. Это безопаснее, чем объявить синтетическое дообучение «90%+» без независимого теста.
 
-## Синтетический YOLO-набор
+## Полный OCR-набор с разметкой
+
+```powershell
+python training/build_full_dataset.py --samples 400 --corpus outputs/ru_corpus.txt --art-dir benchmark/pollination_pages --output outputs/russian_manga_ocr_dataset
+```
+
+Для каждой страницы создаются:
+
+- изображение;
+- YOLO-разметка классов `text` и `bubble`;
+- `manifest.json` с точным transcript, направлением, шрифтом и углом;
+- `recognition/train.tsv` и `recognition/val.tsv` с парами `crop<TAB>text`.
+
+Фоны берутся из оригинальных AI-generated страниц или процедурных текстур, а русские строки отрисовываются локально и имеют точный ground truth. Это полностью размеченный generated dataset, но он всё равно синтетический по изображению: Pollinations/image-generation не создаёт реальные фотографии.
+
+## Русский текстовый корпус
 
 На Windows workflow сначала извлекается до 100 000 предложений из OpenCorpora 2025 (CC BY-SA), затем они используются как русскоязычный корпус для генерации изображений:
 
 ```powershell
 python training/extract_opencorpora.py --archive opencorpora-2025.tar.gz --output outputs/ru_corpus.txt --max-sentences 100000
-python training/synthetic_layout.py --samples 200 --corpus outputs/ru_corpus.txt --output outputs/yolo_russian_synthetic
+python training/build_full_dataset.py --samples 400 --corpus outputs/ru_corpus.txt --output outputs/russian_manga_ocr_dataset
 ```
 
 Генератор покрывает:
@@ -20,16 +35,13 @@ python training/synthetic_layout.py --samples 200 --corpus outputs/ru_corpus.txt
 - пузыри, фоновые текстуры, шум, blur, erosion/dilation и JPEG-артефакты;
 - наклоны, цифры, кавычки, тире, проценты, `ё`, `ъ`, `ы`, `щ` и прочую пунктуацию.
 
-Аннотации записываются в YOLO-формате: класс `0` — текст, класс `1` — пузырь.
-
 ## YOLO detector
 
-На Windows runner запускается небольшой CPU fine-tune:
+На Windows runner запускается CPU fine-tune на полном размеченном наборе:
 
 ```powershell
 python -m pip install -r training/requirements.txt
-python training/synthetic_layout.py --samples 120
-python training/train_yolo.py --epochs 5 --batch 4
+python training/train_yolo.py --data outputs/russian_manga_ocr_dataset/dataset.yaml --output outputs/yolo_training --epochs 15 --batch 4
 ```
 
 Результаты: `best.pt` и экспортированный `best.onnx`. Адаптер `src/ocr_rus_cyrillic/yolo_detector.py` принимает этот ONNX: класс `0` передаётся в OCR, а класс `1` может использоваться для bubble-aware crop.

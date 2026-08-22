@@ -15,7 +15,7 @@ permissions:
 jobs:
   train-yolo:
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,25 +40,28 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/mawo-ru/mawo-nlp-data/releases/download/v1.0.0/opencorpora-2025.tar.gz" -OutFile $archive
           python training\extract_opencorpora.py --archive $archive --output outputs\ru_corpus.txt --max-sentences 100000
 
-      - name: Generate varied Russian synthetic dataset
+      - name: Generate fully-labelled Russian manga OCR dataset
         shell: pwsh
         run: |
-          python training\synthetic_layout.py --samples 200 --corpus outputs\ru_corpus.txt --output outputs\yolo_russian_synthetic --seed 20260821
+          python training\build_full_dataset.py --samples 400 --corpus outputs\ru_corpus.txt --art-dir benchmark\pollination_pages --output outputs\russian_manga_ocr_dataset --seed 20260822
 
-      - name: Train and export YOLO detector
+      - name: Train and export YOLO detector on full labelled dataset
         shell: pwsh
         run: |
-          python training\train_yolo.py --data outputs\yolo_russian_synthetic\dataset.yaml --output outputs\yolo_training --epochs 15 --imgsz 640 --batch 4
+          python training\train_yolo.py --data outputs\russian_manga_ocr_dataset\dataset.yaml --output outputs\yolo_training --epochs 15 --imgsz 640 --batch 4
 
-      - name: Upload dataset summary and detector
+      - name: Upload dataset and detector
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: windows-yolo-cyrillic-detector
           path: |
             outputs/ru_corpus.txt
-            outputs/yolo_russian_synthetic/dataset.yaml
-            outputs/yolo_russian_synthetic/manifest.json
+            outputs/russian_manga_ocr_dataset/dataset.yaml
+            outputs/russian_manga_ocr_dataset/manifest.json
+            outputs/russian_manga_ocr_dataset/recognition/*.tsv
+            outputs/russian_manga_ocr_dataset/images/**/*.jpg
+            outputs/russian_manga_ocr_dataset/labels/**/*.txt
             outputs/yolo_training/**/weights/best.pt
             outputs/yolo_training/**/*.onnx
             outputs/yolo_training/**/*.png
