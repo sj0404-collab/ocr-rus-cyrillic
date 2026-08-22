@@ -27,4 +27,13 @@ mAP50:     0.75632
 mAP50-95:  0.52320
 ```
 
-That model is `models/onnx/yolo_cyrillic_opencorpora_best.onnx`. The synthetic-only model scores higher on its easier distribution, while the OpenCorpora model covers a broader Russian vocabulary. Neither metric establishes 90%+ accuracy on real manga pages or camera photos. The next validation step is to run both detectors on licensed/user-provided pages and measure text-box recall, reading order, CER and WER separately.
+That model is `models/onnx/yolo_cyrillic_opencorpora_best.onnx`. The synthetic-only model scores higher on its easier distribution, while the OpenCorpora model covers a broader Russian vocabulary.
+
+The next full set used 400 AI/procedural pages with exact transcripts, YOLO boxes and recognition TSV crops. It produced `models/onnx/yolo_cyrillic_fullset_best.onnx` with final held-out metrics:
+
+```text
+mAP50:     0.80641
+mAP50-95:  0.53219
+```
+
+The complete 178 MB dataset/model artifact is [Windows run 32567955345](https://github.com/sj0404-collab/ocr-rus-cyrillic/actions/runs/32567955345). Neither metric establishes 90%+ accuracy on real manga pages or camera photos. The next validation step is to run both detectors on licensed/user-provided pages and measure text-box recall, reading order, CER and WER separately.

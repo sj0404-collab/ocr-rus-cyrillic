@@ -12,7 +12,9 @@ The recognition model is a pretrained model, not a new model trained from scratc
 
 A first YOLO text/bubble detector was trained on 200 varied synthetic pages on the Windows runner for 15 CPU epochs. Its held-out synthetic metrics were `mAP50=0.88867` and `mAP50-95=0.62624`.
 
-A second detector was trained with up to 100,000 Russian sentences extracted from OpenCorpora 2025 before synthetic rendering. Its held-out metrics were `mAP50=0.75632` and `mAP50-95=0.52320`; it is stored as `onnx/yolo_cyrillic_opencorpora_best.onnx`. The lower synthetic score reflects a harder Russian-corpus distribution, so this model should be benchmarked on real Russian pages before replacing the first detector. Neither score is a real-camera accuracy guarantee.
+A second detector was trained with up to 100,000 Russian sentences extracted from OpenCorpora 2025 before synthetic rendering. Its held-out metrics were `mAP50=0.75632` and `mAP50-95=0.52320`; it is stored as `onnx/yolo_cyrillic_opencorpora_best.onnx`. The lower synthetic score reflects a harder Russian-corpus distribution, so this model should be benchmarked on real Russian pages before replacing the first detector.
+
+The full labelled Russian manga-style set was then generated from 400 pages, exact transcripts, YOLO boxes and recognition TSV crops. The Windows run produced a final detector with `mAP50=0.80641` and `mAP50-95=0.53219`; its artifact (dataset + labels + crops + model) is [run 32567955345](https://github.com/sj0404-collab/ocr-rus-cyrillic/actions/runs/32567955345). The model is stored as `onnx/yolo_cyrillic_fullset_best.onnx`. All detector metrics are synthetic-only and are not real-camera accuracy guarantees.
 
 ## Upstream and license
 
@@ -51,4 +53,5 @@ c51eb8df3eb94cce31f906c23ceb572151d27b0692a8e8bea62a38f6e54f7808  tflite/cyrilli
 a2803d3c540e9077e561540285005b77dd2d47f7f5e470e8f2da2c993d9ad9f0  tflite/pp-ocrv4_mobile_det_float32.tflite
 5140cb61bb27e2c737e28f6a3ad58e65c321d2ae39b599c16a829b8f2c5d04db  onnx/yolo_cyrillic_text_bubble_best.onnx
 af125a1f879a0b21f4d051ef0f1a1aae10933dd9f4929d21d1cfd3b44f2449ed  onnx/yolo_cyrillic_opencorpora_best.onnx
+7616aaf7d1abd9ccefb4be686e4e0f59c70ae1ab31e637828e63c9791a9e462c  onnx/yolo_cyrillic_fullset_best.onnx
 ```
